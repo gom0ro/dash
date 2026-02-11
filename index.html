@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="kk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #a2d2ff;
+            --secondary-blue: #bde0fe;
+            --yes-green: #4CAF50;
+            --no-red: #f44336;
+            --text-color: #0077b6;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--primary-blue);
+            background-image: radial-gradient(circle at 20% 30%, var(--secondary-blue) 0%, transparent 20%),
+                radial-gradient(circle at 80% 70%, var(--secondary-blue) 0%, transparent 20%);
+            font-family: 'Comfortaa', cursive;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 3rem;
+            border-radius: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 100, 0.1);
+            max-width: 95%;
+            width: fit-content;
+            min-width: 450px;
+            animation: fadeIn 1s ease-out;
+            transition: all 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .image-container {
+            margin-bottom: 2rem;
+        }
+
+        .image-container img {
+            max-width: 300px;
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: var(--text-color);
+            font-size: 1.5rem;
+            line-height: 1.4;
+            margin-bottom: 2.5rem;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            min-height: 250px;
+            position: relative;
+            width: 100%;
+        }
+
+        button {
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-family: 'Comfortaa', cursive;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            color: white;
+        }
+
+        #yesBtn {
+            background-color: var(--yes-green);
+        }
+
+        #noBtn {
+            background-color: var(--no-red);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .hearts {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .heart {
+            position: absolute;
+            color: #48cae4;
+            animation: float 4s ease-in infinite;
+            opacity: 0;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-10vh) scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        /* Success Message */
+        .success-message {
+            display: none;
+            color: var(--text-color);
+        }
+
+        .success-message h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container" id="mainContainer">
+        <div class="image-container">
+            <!-- User will add their photo here -->
+            <img src="C:\Users\Asus Vivobook\Downloads\WhatsApp Image 2026-02-11 at 15.50.01.jpeg" alt="Teddy Bear"
+                id="displayImg">
+        </div>
+        <h1 id="question">Бул бала чорт па?</h1>
+
+        <div class="buttons" id="btnGroup">
+            <button id="yesBtn">Иә</button>
+            <button id="noBtn">Жоқ</button>
+        </div>
+    </div>
+
+    <div class="hearts" id="heartsContainer"></div>
+
+    <script>
+        const yesBtn = document.getElementById('yesBtn');
+        const noBtn = document.getElementById('noBtn');
+        const question = document.getElementById('question');
+        const mainContainer = document.getElementById('mainContainer');
+        const displayImg = document.getElementById('displayImg');
+
+        let yesScale = 1;
+        let noScale = 1;
+        let clickCount = 0;
+        let noOffset = 0;
+
+        noBtn.addEventListener('click', () => {
+            clickCount++;
+
+            // If 6 clicks, disappear
+            if (clickCount >= 6) {
+                noBtn.style.display = 'none';
+                return;
+            }
+
+            // Decrease No button scale
+            noScale -= 0.12;
+            if (noScale < 0.2) noScale = 0.2;
+
+            // Move No button away to the right
+            noOffset += 50;
+
+            // Apply transformations
+            // We use translateX to move it away from the Yes button
+            noBtn.style.transform = `translateX(${noOffset}px) scale(${noScale})`;
+
+            // Increase Yes button scale
+            yesScale += 0.4;
+            yesBtn.style.transform = `scale(${yesScale})`;
+            // To keep "Yes" stationary, we make sure its transform-origin is left or center
+            // but since it's in a flex container, scale(X) grows from center by default.
+            yesBtn.style.transformOrigin = 'center';
+        });
+
+        yesBtn.addEventListener('click', () => {
+            mainContainer.innerHTML = `
+                <div class="image-container">
+                    <img src="">
+                </div>
+                <h2 style="color: var(--text-color);">👍</h2>
+                <p style="color: var(--text-color);"></p>
+            `;
+            startHearts();
+        });
+
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.classList.add('heart');
+            heart.innerHTML = '💙';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDuration = (Math.random() * 2 + 3) + 's';
+            heart.style.fontSize = (Math.random() * 20 + 20) + 'px';
+            document.getElementById('heartsContainer').appendChild(heart);
+
+            setTimeout(() => {
+                heart.remove();
+            }, 5000);
+        }
+
+        function startHearts() {
+            setInterval(createHeart, 300);
+        }
+    </script>
+</body>
+
+</html>
