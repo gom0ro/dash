@@ -403,11 +403,20 @@ onMounted(() => {
 }
 
 @media (max-width: 900px) {
-  .profile-container {
-    grid-template-columns: 1fr;
-  }
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
+  .profile-container { grid-template-columns: 1fr; }
+  .stats-sidebar { order: -1; flex-direction: row; flex-wrap: wrap; }
+  .stat-card { flex: 1; min-width: 250px; }
+}
+
+@media (max-width: 600px) {
+  .profile-view { padding: 1rem; }
+  .page-header h1 { font-size: 1.75rem; }
+  .form-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .stat-card { min-width: 100%; }
+  .card-header, .card-body { padding: 1.25rem; }
+}
+
+@media (max-width: 375px) {
+    .profile-view { padding: 0.75rem; }
 }
 </style>

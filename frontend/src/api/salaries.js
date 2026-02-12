@@ -6,5 +6,8 @@ export const salariesAPI = {
     },
     getHistory(workerId) {
         return api.get(`/salaries/history/${workerId}`)
+    },
+    getMyHistory() {
+        return api.get('/salaries/my-history')
     }
 }

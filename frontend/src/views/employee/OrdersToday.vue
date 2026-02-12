@@ -312,7 +312,7 @@ onMounted(async () => {
 
 .orders-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
 }
 
@@ -526,17 +526,20 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
-  .orders-today {
-    padding: 1rem;
-  }
+  .orders-today { padding: 1rem; }
+  .page-header { flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
+  .page-header h1 { font-size: 1.6rem; }
+  .header-stats { width: 100%; }
+  .stat-badge { flex: 1; justify-content: center; }
+  .orders-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .order-card { border-radius: 12px; }
+  .stage-btn { padding: 0.85rem; }
+  .stage-name { font-size: 0.9rem; }
+  .stage-payment { font-size: 0.9rem; }
+}
 
-  .page-header {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .orders-grid {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 375px) {
+    .orders-today { padding: 0.75rem; }
+    .page-header h1 { font-size: 1.4rem; }
 }
 </style>

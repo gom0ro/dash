@@ -1,11 +1,20 @@
 ﻿<template>
   <div class="production-tasks">
     <div class="page-header">
-      <div>
-        <h1>Временный склад и Задачи</h1>
-        <p class="subtitle">Отслеживайте этапы производства и отмечайте выполнение</p>
+      <div class="header-main">
+        <h1>Производство</h1>
+        <p class="subtitle">Отслеживайте этапы и отмечайте выполнение</p>
       </div>
-      <AppButton @click="loadData" variant="outline">🔄 Обновить</AppButton>
+      
+      <div class="header-actions">
+        <div v-if="quickStats" class="quick-balance-card" @click="router.push('/employee/salary')">
+          <div class="qb-icon"><i class="ri-wallet-3-line"></i></div>
+          <div class="qb-info">
+            <span class="qb-label">Баланс:</span>
+            <span class="qb-value">{{ formatPrice(quickStats.current_balance) }}</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div v-if="loading" class="loading-state">
@@ -127,16 +136,19 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { productionAPI } from '@/api/production'
 import { workLogsAPI } from '@/api/work_logs'
 import AppButton from '@/components/UI/AppButton.vue'
 import AppModal from '@/components/UI/AppModal.vue'
 
+const router = useRouter()
 const loading = ref(false)
 const submitting = ref(false)
 const pipelines = ref([])
 const showReportModal = ref(false)
 const showSuccess = ref(false)
+const quickStats = ref(null)
 
 const selectedProduct = ref(null)
 const selectedStage = ref(null)
@@ -150,10 +162,14 @@ const reportForm = ref({
 const loadData = async () => {
   loading.value = true
   try {
-    const { data } = await productionAPI.getWipPipeline()
-    pipelines.value = data
+    const [wipRes, statsRes] = await Promise.all([
+      productionAPI.getWipPipeline(),
+      workLogsAPI.getMySalary()
+    ])
+    pipelines.value = wipRes.data
+    quickStats.value = statsRes.data
   } catch (e) {
-    console.error('Failed to load wip pipeline', e)
+    console.error('Failed to load data', e)
   } finally {
     loading.value = false
   }
@@ -229,12 +245,49 @@ onMounted(loadData)
   margin: 0 auto;
 }
 
-.page-header {
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; gap: 1rem; }
+
+.header-actions {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2.5rem;
+  align-items: center;
+  gap: 1rem;
 }
+
+.quick-balance-card {
+  background: white;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  border: 1px solid #edf2f7;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.quick-balance-card:hover {
+  transform: translateY(-2px);
+  border-color: #3182ce;
+}
+
+.qb-icon {
+  width: 32px;
+  height: 32px;
+  background: #ebf8ff;
+  color: #3182ce;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.qb-info { display: flex; flex-direction: column; }
+.qb-label { font-size: 0.7rem; color: #718096; font-weight: 700; text-transform: uppercase; }
+.qb-value { font-size: 1rem; font-weight: 800; color: #2d3748; }
+
+.refresh-btn { height: 44px; width: 44px; display: flex; align-items: center; justify-content: center; padding: 0 !important; }
 
 .page-header h1 {
   font-size: 2rem;
@@ -506,10 +559,22 @@ onMounted(loadData)
 
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-@media (max-width: 1024px) {
-  .pipeline-flow { flex-direction: column; gap: 1rem; }
-  .pipeline-step { width: 100%; }
+@media (max-width: 768px) {
+  .production-tasks { padding: 1rem; }
+  .page-header { flex-direction: column; align-items: stretch; margin-bottom: 1.5rem; }
+  .header-main h1 { font-size: 1.75rem; }
+  .quick-balance-card { width: 100%; justify-content: center; }
+  .pipeline-flow { flex-direction: column; gap: 1rem; padding: 0.5rem 0; }
+  .pipeline-step { width: 100%; min-width: 0; }
   .connector { display: none; }
-  .step-content { margin: 0; }
+  .step-content { margin: 0; padding: 1rem; }
+  .step-header { margin-bottom: 0.75rem; }
+  .quantity-badge { font-size: 1.1rem; }
+  .product-info { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+}
+
+@media (max-width: 375px) {
+    .production-tasks { padding: 0.75rem; }
+    .page-header h1 { font-size: 1.5rem; }
 }
 </style>

@@ -3,12 +3,13 @@
     <div class="page-header">
       <div class="header-content">
         <h1>Каталог продукции</h1>
-        <p class="subtitle">Прямые поставки от производителя по оптовым ценам</p>
+        <p class="subtitle">Оптовые цены напрямую от производителя</p>
       </div>
       <div class="header-actions">
-         <div class="search-box">
-           <input v-model="search" type="text" placeholder="Поиск товара..." class="search-input" />
-         </div>
+        <div class="search-box">
+          <i class="ri-search-line"></i>
+          <input v-model="search" type="text" placeholder="Поиск товара..." class="search-input" />
+        </div>
       </div>
     </div>
 
@@ -225,10 +226,12 @@ onMounted(loadProducts)
 .header-content h1 { font-size: 2.5rem; font-weight: 800; color: #1e293b; margin: 0; letter-spacing: -0.025em; }
 .subtitle { color: #64748b; font-size: 1.1rem; margin-top: 0.5rem; }
 
-.search-input { padding: 0.75rem 1.5rem; border-radius: 12px; border: 1.5px solid #e2e8f0; width: 300px; font-size: 0.95rem; transition: all 0.2s; }
+.search-box { position: relative; width: 100%; max-width: 400px; }
+.search-box i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+.search-input { padding: 0.75rem 1rem 0.75rem 2.8rem; border-radius: 14px; border: 1.5px solid #e2e8f0; width: 100%; font-size: 0.95rem; transition: all 0.2s; background: white; }
 .search-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.1); }
 
-.catalog-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 2rem; }
+.catalog-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
 
 .product-premium-card { background: white; border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 .product-premium-card:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
@@ -338,7 +341,18 @@ onMounted(loadProducts)
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 768px) {
-  .page-header { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
-  .search-input { width: 100%; }
+  .catalog-view { padding: 1rem; }
+  .page-header { flex-direction: column; align-items: flex-start; gap: 1.5rem; margin-bottom: 2rem; }
+  .header-content h1 { font-size: 1.8rem; }
+  .search-box { max-width: 100%; }
+  .catalog-container { grid-template-columns: 1fr; gap: 1rem; }
+  .product-premium-card { border-radius: 20px; }
+  .product-main h3 { font-size: 1.25rem; }
+  .price-value { font-size: 1.6rem; }
+}
+
+@media (max-width: 375px) {
+    .catalog-view { padding: 0.75rem; }
+    .product-body { padding: 1.25rem; }
 }
 </style>

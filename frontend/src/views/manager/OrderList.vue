@@ -1,103 +1,105 @@
 ﻿<template>
-  <div class="page-container">
+  <div class="orders-view fade-in">
     <div class="page-header">
-      <h1 class="page-title">Список заказов</h1>
-      <AppButton @click="router.push('/manager/orders/create')">
-        Создать заказ
+      <div class="header-content">
+        <h1>Управление заказами</h1>
+        <p class="subtitle">Отслеживание и обработка клиентских заказов</p>
+      </div>
+      <AppButton @click="router.push('/manager/orders/create')" class="create-order-btn">
+        <i class="ri-add-line"></i> <span>Новый заказ</span>
       </AppButton>
     </div>
 
-    <div class="filters">
-      <div class="status-filters">
+    <!-- Filters Section -->
+    <div class="filters-container">
+      <div class="status-scroll">
         <button 
           v-for="status in statuses" 
           :key="status.value"
-          :class="['filter-chip', { active: currentFilter === status.value }]"
+          :class="['status-chip', { active: currentFilter === status.value }]"
           @click="setFilter(status.value)"
         >
           {{ status.label }}
+          <span class="count-badge" v-if="getCount(status.value) > 0">
+            {{ getCount(status.value) }}
+          </span>
         </button>
       </div>
     </div>
 
-    <div class="orders-table-container">
-      <div v-if="orderStore.loading && !orderStore.orders.length" class="loading-state">
-        Загрузка...
+    <div v-if="orderStore.loading && !orderStore.orders.length" class="loading-state">
+      <div class="spinner"></div>
+      <p>Загрузка заказов...</p>
+    </div>
+    
+    <div v-else-if="orderStore.error" class="error-state">
+      <i class="ri-error-warning-line"></i>
+      <p>{{ orderStore.error }}</p>
+      <AppButton size="sm" @click="orderStore.fetchOrders()">Попробовать снова</AppButton>
+    </div>
+
+    <div v-else class="orders-content">
+      <div v-if="filteredOrders.length === 0" class="empty-state">
+        <i class="ri-inbox-line"></i>
+        <h3>Заказов пока нет</h3>
+        <p>Попробуйте изменить фильтры или создайте новый заказ.</p>
       </div>
-      
-      <div v-else-if="orderStore.error" class="error-state">
-        {{ orderStore.error }}
+
+      <div v-else class="orders-grid">
+        <div 
+          v-for="order in filteredOrders" 
+          :key="order.id" 
+          class="order-card"
+          :class="{ 'card-overdue': isOverdue(order) }"
+          @click="openOrder(order.id)"
+        >
+          <div class="order-card-header">
+            <div class="order-id-track">
+                <span class="id-pill">#{{ order.id }}</span>
+                <span v-if="isOverdue(order)" class="overdue-tag">
+                    <i class="ri-alarm-warning-line"></i> Просрочен
+                </span>
+            </div>
+            <StatusBadge :status="order.status" />
+          </div>
+
+          <div class="order-card-body">
+            <div class="customer-info">
+                <h3>{{ order.customer_name || 'Частный клиент' }}</h3>
+                <span class="customer-phone" v-if="order.customer_phone">{{ order.customer_phone }}</span>
+            </div>
+
+            <div class="order-meta-grid">
+                <div class="meta-item">
+                    <span class="label">Дедлайн:</span>
+                    <span class="value" :class="{ 'warning': isDueSoon(order), 'danger': isOverdue(order) }">
+                        <i class="ri-calendar-event-line"></i> {{ formatDate(order.deadline) }}
+                    </span>
+                </div>
+                <div class="meta-item">
+                    <span class="label">Сумма:</span>
+                    <span class="value price">{{ formatPrice(order.total_price) }}</span>
+                </div>
+            </div>
+          </div>
+
+          <div class="order-card-footer" @click.stop>
+            <div class="actions-group" v-if="order.status === 'pending'">
+                <button class="btn-action approve" @click="approveOrder(order.id)">
+                    <i class="ri-check-line"></i> Принять
+                </button>
+                <button class="btn-action reject" @click="rejectOrder(order.id)">
+                    <i class="ri-close-line"></i> Отклонить
+                </button>
+            </div>
+            <div class="actions-group" v-else>
+                <button class="btn-action view" @click="openOrder(order.id)">
+                    Подробнее <i class="ri-arrow-right-line"></i>
+                </button>
+            </div>
+          </div>
+        </div>
       </div>
-      
-      <table v-else class="orders-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Клиент</th>
-            <th>Дедлайн</th>
-            <th>Сумма</th>
-            <th>Статус</th>
-            <th>Действия</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr 
-            v-for="order in filteredOrders" 
-            :key="order.id" 
-            :class="['order-row', { overdue: isOverdue(order) }]" 
-            @click="openOrder(order.id)"
-          >
-            <td>#{{ order.id }}</td>
-            <td>
-              <div class="customer-cell">
-                {{ order.customer_name || 'Частный клиент' }}
-                <span v-if="isOverdue(order)" class="overdue-badge">⚠️ Просрочен</span>
-              </div>
-            </td>
-            <td :class="{ 'deadline-warning': isDueSoon(order), 'deadline-overdue': isOverdue(order) }">
-              {{ formatDate(order.deadline) }}
-            </td>
-            <td>{{ formatPrice(order.total_price) }}</td>
-            <td>
-              <StatusBadge :status="order.status" />
-            </td>
-            <td>
-              <div class="action-buttons">
-                <AppButton 
-                  v-if="order.status === 'pending'" 
-                  size="sm" 
-                  variant="success" 
-                  @click.stop="approveOrder(order.id)"
-                  class="mr-2"
-                >
-                  ✓ Принять
-                </AppButton>
-                <AppButton 
-                  v-if="order.status === 'pending'" 
-                  size="sm" 
-                  variant="danger" 
-                  @click.stop="rejectOrder(order.id)"
-                  class="mr-2"
-                >
-                  ✗ Отклонить
-                </AppButton>
-                <AppButton 
-                  size="sm" 
-                  variant="outline" 
-                  @click.stop="openOrder(order.id)"
-                >
-                  Просмотр
-                </AppButton>
-              </div>
-            </td>
-          </tr>
-          <tr v-if="filteredOrders.length === 0">
-            <td colspan="6" class="empty-state">
-              Заказы не найдены
-            </td>
-          </tr>
-        </tbody>
-      </table>
     </div>
   </div>
 </template>
@@ -116,20 +118,28 @@ const currentFilter = ref('all')
 
 const statuses = [
   { label: 'Все', value: 'all' },
-  { label: 'Ожидает', value: 'pending' },
-  { label: 'Принят', value: 'accepted' },
-  { label: 'В работе', value: 'in_progress' },
-  { label: 'Готов', value: 'done' },
-  { label: 'Сдан', value: 'delivered' },
-  { label: 'Отменен', value: 'cancelled' }
+  { label: 'Новые', value: 'pending' },
+  { label: 'В работе', value: 'accepted' },
+  { label: 'Активные', value: 'in_progress' },
+  { label: 'Готовы', value: 'done' },
+  { label: 'Сданы', value: 'delivered' }
 ]
 
 const filteredOrders = computed(() => {
-  if (currentFilter.value === 'all') {
-    return orderStore.orders
+  let orders = orderStore.orders
+  if (currentFilter.value !== 'all') {
+    orders = orders.filter(order => order.status === currentFilter.value)
+  } else {
+    // 'Все' now shows only non-delivered orders as per user request
+    orders = orders.filter(order => order.status !== 'delivered')
   }
-  return orderStore.orders.filter(order => order.status === currentFilter.value)
+  return orders.sort((a, b) => b.id - a.id)
 })
+
+const getCount = (status) => {
+    if (status === 'all') return orderStore.orders.filter(o => o.status !== 'delivered').length
+    return orderStore.orders.filter(o => o.status === status).length
+}
 
 onMounted(() => {
   orderStore.fetchOrders()
@@ -145,7 +155,6 @@ const openOrder = (id) => {
 
 const approveOrder = async (id) => {
   if (!confirm('Принять этот заказ в производство?')) return
-  
   try {
     await orderStore.updateOrderStatus(id, 'accepted')
     await orderStore.fetchOrders()
@@ -156,7 +165,6 @@ const approveOrder = async (id) => {
 
 const rejectOrder = async (id) => {
   if (!confirm('Отклонить этот заказ? Действие необратимо.')) return
-  
   try {
     await orderStore.deleteOrder(id)
     await orderStore.fetchOrders()
@@ -167,7 +175,7 @@ const rejectOrder = async (id) => {
 
 const formatDate = (dateString) => {
   if (!dateString) return '-'
-  return new Date(dateString).toLocaleDateString('ru-RU')
+  return new Date(dateString).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
 }
 
 const formatPrice = (price) => {
@@ -190,9 +198,9 @@ const isDueSoon = (order) => {
 </script>
 
 <style scoped>
-.page-container {
-  padding: 2rem;
-  max-width: 1200px;
+.orders-view {
+  padding: 1.5rem;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -200,141 +208,247 @@ const isDueSoon = (order) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  gap: 1.5rem;
 }
 
-.page-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: #111827;
+.header-content h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.02em;
 }
 
-.filters {
-  margin-bottom: 2rem;
+.subtitle { color: #64748b; font-weight: 500; }
+
+.create-order-btn {
+    padding: 0.75rem 1.5rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
 
-.status-filters {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+.filters-container {
+    margin-bottom: 2rem;
+    overflow: hidden;
 }
 
-.filter-chip {
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  background: white;
-  border: 1px solid #d1d5db;
-  color: #4b5563;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+.status-scroll {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.25rem 0.25rem 0.75rem;
+    -webkit-overflow-scrolling: touch;
 }
 
-.filter-chip:hover {
-  background: #f3f4f6;
+.status-scroll::-webkit-scrollbar { display: none; }
+
+.status-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.25rem;
+    background: white;
+    border: 1px solid #f1f5f9;
+    border-radius: 14px;
+    color: #64748b;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
 }
 
-.filter-chip.active {
-  background: #667eea;
-  color: white;
-  border-color: #667eea;
+.status-chip:hover {
+    color: #1e293b;
+    background: #f8fafc;
 }
 
-.orders-table-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
+.status-chip.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+    box-shadow: 0 8px 15px rgba(59, 130, 246, 0.2);
 }
 
-.orders-table {
-  width: 100%;
-  border-collapse: collapse;
+.count-badge {
+    background: rgba(255,255,255,0.2);
+    color: inherit;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-weight: 800;
 }
 
-.orders-table th {
-  background: #f9fafb;
-  padding: 1rem;
-  text-align: left;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: #6b7280;
-  letter-spacing: 0.05em;
+.status-chip.active .count-badge {
+    background: white;
+    color: #3b82f6;
 }
 
-.orders-table td {
-  padding: 1rem;
-  border-top: 1px solid #e5e7eb;
-  color: #111827;
-  font-size: 0.875rem;
+.orders-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
 }
 
-.order-row {
-  cursor: pointer;
-  transition: background-color 0.2s;
+.order-card {
+    background: white;
+    border-radius: 20px;
+    padding: 1.5rem;
+    border: 1px solid #f1f5f9;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.03);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.order-row:hover {
-  background-color: #f9fafb;
+.order-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.06);
 }
 
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  color: #6b7280;
+.order-card.card-overdue {
+    border-left: 4px solid #ef4444;
 }
 
-.loading-state, .error-state {
-  padding: 2rem;
-  text-align: center;
+.order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.error-state {
-  color: #ef4444;
+.id-pill {
+    background: #f1f5f9;
+    color: #475569;
+    font-weight: 800;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 8px;
 }
 
-.order-row.overdue {
-  background-color: #fee2e2;
+.overdue-tag {
+    margin-left: 8px;
+    color: #ef4444;
+    font-weight: 800;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
-.order-row.overdue:hover {
-  background-color: #fecaca;
+.customer-info h3 {
+    margin: 0 0 4px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #1e293b;
 }
 
-.customer-cell {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.customer-phone {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    font-weight: 500;
 }
 
-.overdue-badge {
-  font-size: 0.75rem;
-  padding: 0.125rem 0.375rem;
-  background: #dc2626;
-  color: white;
-  border-radius: 4px;
-  font-weight: 600;
+.order-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: #f8fafc;
+    border-radius: 16px;
+    border: 1px solid #f1f5f9;
 }
 
-.deadline-warning {
-  color: #f59e0b;
-  font-weight: 600;
+.meta-item { display: flex; flex-direction: column; gap: 4px; }
+.meta-item .label { font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+.meta-item .value { font-weight: 700; color: #1e293b; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; }
+.meta-item .value.price { color: #3b82f6; font-weight: 900; font-size: 1.1rem; }
+.meta-item .value.warning { color: #d97706; }
+.meta-item .value.danger { color: #ef4444; }
+
+.order-card-footer {
+    padding-top: 1rem;
+    border-top: 1px solid #f8fafc;
 }
 
-.deadline-overdue {
-  color: #dc2626;
-  font-weight: 700;
+.actions-group {
+    display: flex;
+    gap: 0.75rem;
 }
 
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+.btn-action {
+    flex: 1;
+    padding: 0.7rem;
+    border-radius: 12px;
+    border: none;
+    font-weight: 800;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
-.mr-2 {
-  margin-right: 0.5rem;
+.btn-action.approve { background: #dcfce7; color: #166534; }
+.btn-action.approve:hover { background: #bbf7d0; }
+
+.btn-action.reject { background: #fee2e2; color: #991b1b; }
+.btn-action.reject:hover { background: #fecaca; }
+
+.btn-action.view { background: #f1f5f9; color: #475569; }
+.btn-action.view:hover { background: #e2e8f0; color: #1e293b; }
+
+.loading-state, .error-state, .empty-state {
+    text-align: center;
+    padding: 5rem 2rem;
+    background: white;
+    border-radius: 24px;
+}
+
+.loading-state i, .empty-state i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; color: #94a3b8; }
+
+.spinner {
+    width: 3rem;
+    height: 3rem;
+    border: 4px solid #f1f5f9;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1.5rem;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 1024px) {
+    .orders-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+}
+
+@media (max-width: 768px) {
+    .orders-view { padding: 1rem; }
+    .page-header { flex-direction: column; align-items: stretch; gap: 1.25rem; margin-bottom: 2rem; }
+    .header-content h1 { font-size: 1.6rem; }
+    .create-order-btn { width: 100%; justify-content: center; padding: 1rem; }
+    .status-chip { padding: 0.5rem 1rem; font-size: 0.85rem; }
+    .orders-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .order-card { padding: 1.25rem; border-radius: 16px; }
+    .order-meta-grid { padding: 1rem; gap: 0.75rem; }
+    .meta-item .value { font-size: 0.85rem; }
+    .meta-item .value.price { font-size: 1rem; }
+}
+
+@media (max-width: 375px) {
+    .orders-view { padding: 0.75rem; }
+    .order-card { padding: 1rem; }
 }
 </style>

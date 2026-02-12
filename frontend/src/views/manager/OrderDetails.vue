@@ -64,18 +64,31 @@
 
         <div class="card">
           <div class="card-header">
-            <h3>Информация о заказе</h3>
+            <h3>Состав заказа</h3>
           </div>
           <div class="card-body">
-            <div class="info-grid">
-              <div class="info-item">
-                <span class="info-label">Товар:</span>
-                <span class="info-value">{{ productName }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Количество:</span>
-                <span class="info-value">{{ order.quantity }} шт.</span>
-              </div>
+            <div class="items-table-wrapper">
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>Товар</th>
+                            <th class="text-right">Кол-во</th>
+                            <th class="text-right">Цена</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="item in displayItems" :key="item.id">
+                            <td>
+                                <div class="item-name">{{ getProductNameById(item.product_id) }}</div>
+                            </td>
+                            <td class="text-right"><strong>{{ item.quantity }} шт.</strong></td>
+                            <td class="text-right">{{ formatMoney(getProductPriceById(item.product_id)) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div v-if="order" class="info-grid mt-4">
               <div class="info-item">
                 <span class="info-label">Дедлайн:</span>
                 <span class="info-value" :class="{ overdue: isOverdue }">
@@ -370,8 +383,27 @@ const totalProfit = computed(() => {
   return (product.value.price - product.value.cost) * order.value.quantity
 })
 
+const displayItems = computed(() => {
+    if (order.value?.items && order.value.items.length > 0) return order.value.items
+    if (order.value?.product_id) return [{ product_id: order.value.product_id, quantity: order.value.quantity }]
+    return []
+})
+
+const getProductNameById = (id) => {
+    return warehouseStore.getProductById(id)?.name || 'Неизвестный товар'
+}
+
+const getProductPriceById = (id) => {
+    return warehouseStore.getProductById(id)?.price || 0
+}
+
 const totalStagesCost = computed(() => {
-  return productStages.value.reduce((sum, stage) => sum + stage.payment, 0)
+  // Расчет стоимости работ (берем сумму всех этапов по всем товарам в заказе)
+  return displayItems.value.reduce((total, item) => {
+      const prod = warehouseStore.getProductById(item.product_id)
+      const stagesSum = prod?.stages?.reduce((s, st) => s + st.payment, 0) || 0
+      return total + (stagesSum * item.quantity)
+  }, 0)
 })
 
 const completedStagesCount = computed(() => {
@@ -572,6 +604,14 @@ onMounted(async () => {
   font-weight: 700;
   margin: 0 0 0.5rem;
 }
+
+.items-table-wrapper { margin-bottom: 1.5rem; border: 1.5px solid #f1f5f9; border-radius: 12px; overflow: hidden; }
+.items-table { width: 100%; border-collapse: collapse; }
+.items-table th { background: #f8fafc; padding: 1rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 800; border-bottom: 1.5px solid #f1f5f9; }
+.items-table td { padding: 1rem; border-bottom: 1px solid #f8fafc; font-size: 0.95rem; }
+.text-right { text-align: right !important; }
+.item-name { font-weight: 700; color: #1e293b; }
+.mt-4 { margin-top: 1rem; }
 
 .subtitle {
   color: #6b7280;

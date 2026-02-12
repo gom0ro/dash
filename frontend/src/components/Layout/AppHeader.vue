@@ -1,33 +1,48 @@
 <template>
   <header class="header">
     <div class="header-content">
+      <div class="header-left">
+        <button class="menu-toggle" @click="$emit('toggle-sidebar')">
+          <i class="ri-menu-2-line"></i>
+        </button>
+      </div>
+
       <div class="header-right">
         <div class="user-info">
           <div class="user-avatar">
             {{ userInitials }}
           </div>
-          <div class="user-details">
+          <div class="user-details" v-if="!isMobile">
             <div class="user-name">{{ userStore.user?.full_name }}</div>
             <div class="user-role">{{ roleLabel }}</div>
           </div>
         </div>
         
-        <AppButton variant="secondary" size="sm" @click="handleLogout">
-          Выйти
-        </AppButton>
+        <button class="logout-icon-btn" @click="handleLogout" title="Выйти">
+          <i class="ri-logout-box-r-line"></i>
+        </button>
       </div>
     </div>
   </header>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import AppButton from '@/components/UI/AppButton.vue'
+
+defineEmits(['toggle-sidebar'])
 
 const router = useRouter()
 const userStore = useUserStore()
+const isMobile = ref(window.innerWidth <= 1024)
+
+const updateIsMobile = () => {
+  isMobile.value = window.innerWidth <= 1024
+}
+
+onMounted(() => window.addEventListener('resize', updateIsMobile))
+onUnmounted(() => window.removeEventListener('resize', updateIsMobile))
 
 const roleLabels = {
   admin: 'Администратор',
@@ -41,7 +56,9 @@ const roleLabel = computed(() => roleLabels[userStore.user?.role] || '')
 const userInitials = computed(() => {
   const name = userStore.user?.full_name || ''
   const parts = name.split(' ')
-  return parts.map(p => p[0]).join('').toUpperCase().slice(0, 2)
+  return parts.length > 1 
+    ? (parts[0][0] + parts[1][0]).toUpperCase()
+    : parts[0]?.slice(0, 2).toUpperCase() || '??'
 })
 
 const handleLogout = () => {
@@ -52,77 +69,113 @@ const handleLogout = () => {
 
 <style scoped>
 .header {
-  background: #2c3e50;
-  color: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: white;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
   position: sticky;
   top: 0;
   z-index: 100;
+  height: 70px;
+  display: flex;
+  align-items: center;
 }
 
 .header-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0.75rem 2rem;
+  width: 100%;
+  padding: 0 1.5rem;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.menu-toggle {
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.menu-toggle:hover {
+  background: #f1f5f9;
+  color: #3b82f6;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  flex-shrink: 0;
+  gap: 1.25rem;
 }
 
 .user-info {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  padding-right: 1.25rem;
+  border-right: 1px solid #f1f5f9;
 }
 
 .user-avatar {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #3b82f6;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 1rem;
+  font-weight: 700;
+  font-size: 0.9rem;
 }
 
 .user-details {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
 }
 
 .user-name {
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 700;
+  color: #1e293b;
 }
 
 .user-role {
   font-size: 0.75rem;
-  opacity: 0.8;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.logout-icon-btn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logout-icon-btn:hover {
+  color: #ef4444;
 }
 
 @media (max-width: 1024px) {
   .header-content {
-    padding: 1rem;
-    flex-wrap: wrap;
-  }
-  
-  .header-nav {
-    order: 3;
-    width: 100%;
-  }
-  
-  .user-details {
-    display: none;
+    padding: 0 1rem;
   }
 }
 </style>

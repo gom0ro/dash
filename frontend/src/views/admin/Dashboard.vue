@@ -1,149 +1,154 @@
 ﻿<template>
-  <div class="dashboard">
-    <div class="dashboard-header">
-      <div class="header-left">
+  <div class="dashboard fade-in">
+    <header class="dashboard-header">
+      <div class="header-main">
         <h1>{{ greeting }}</h1>
         <p class="subtitle">{{ roleDescription }}</p>
       </div>
-      <div class="header-right" v-if="userStore.isAdmin">
-        <div class="date-chip">{{ currentDate }}</div>
+      <div class="header-meta">
+        <div class="time-pill">
+            <i class="ri-calendar-event-line"></i>
+            <span>{{ currentDate }}</span>
+        </div>
       </div>
-    </div>
+    </header>
 
-    <div v-if="loading" class="loading">
+    <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Загрузка аналитики...</p>
+      <p>Сбор аналитики...</p>
     </div>
 
     <div v-else class="dashboard-content">
-      <!-- Admin/Manager Quick Actions -->
-      <div v-if="userStore.isAdmin || userStore.isManager" class="quick-actions-bar">
-        <AppButton @click="openTaskModal" variant="primary">
-          <i class="ri-edit-2-line btn-icon"></i> Дать поручение
-        </AppButton>
-        <AppButton v-if="userStore.isManager" variant="outline" @click="$router.push('/manager/orders/create')">
-          <i class="ri-add-line btn-icon"></i> Новый заказ
-        </AppButton>
+      <!-- Admin / Manager Quick Controls -->
+      <div v-if="userStore.isAdmin || userStore.isManager" class="action-grid">
+        <button class="control-btn primary" @click="openTaskModal">
+            <div class="btn-icon"><i class="ri-edit-2-fill"></i></div>
+            <div class="btn-text">
+                <span class="t-main">Дать поручение</span>
+                <span class="t-sub">Сотруднику на сегодня</span>
+            </div>
+        </button>
+        <button v-if="userStore.isManager" class="control-btn outline" @click="$router.push('/manager/orders/create')">
+            <div class="btn-icon"><i class="ri-add-circle-fill"></i></div>
+            <div class="btn-text">
+                <span class="t-main">Создать заказ</span>
+                <span class="t-sub">Опт или розница</span>
+            </div>
+        </button>
       </div>
 
-      <!-- ADMIN DASHBOARD -->
-      <div v-if="userStore.isAdmin" class="admin-section">
-        <!-- Stats Cards Grid -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon" style="background: #e0f2fe; color: #0369a1;"><i class="ri-box-3-line"></i></div>
-            <div class="stat-main">
-              <div class="stat-label">Заказы (общ)</div>
-              <div class="stat-value">{{ stats.totalOrders }}</div>
-              <div class="stat-sub">{{ stats.pendingOrders }} в ожидании</div>
+      <!-- ADMIN VIEW -->
+      <div v-if="userStore.isAdmin" class="view-section">
+        <!-- Main Stats Strip -->
+        <div class="stats-ribbon">
+          <div class="glass-stat">
+            <div class="g-icon orders"><i class="ri-shopping-cart-2-line"></i></div>
+            <div class="g-data">
+              <span class="g-label">Заказы (общ)</span>
+              <span class="g-value">{{ stats.totalOrders }}</span>
+              <span class="g-sub">{{ stats.pendingOrders }} новых</span>
             </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon" style="background: #fef3c7; color: #92400e;"><i class="ri-time-line"></i></div>
-            <div class="stat-main">
-              <div class="stat-label">В работе</div>
-              <div class="stat-value">{{ stats.inProgressOrders }}</div>
-              <div class="stat-sub">{{ stats.doneOrders }} сделано</div>
+          <div class="glass-stat">
+            <div class="g-icon work"><i class="ri-hammer-line"></i></div>
+            <div class="g-data">
+              <span class="g-label">В производстве</span>
+              <span class="g-value">{{ stats.inProgressOrders }}</span>
+              <span class="g-sub">{{ stats.doneOrders }} завершено</span>
             </div>
           </div>
-          <div class="stat-card" :class="{ 'alert-card': stats.overdueOrders > 0 }">
-            <div class="stat-icon" style="background: #fee2e2; color: #991b1b;"><i class="ri-error-warning-line"></i></div>
-            <div class="stat-main">
-              <div class="stat-label">Просрочено</div>
-              <div class="stat-value">{{ stats.overdueOrders }}</div>
-              <div class="stat-sub urgent">Требуют внимания!</div>
+          <div class="glass-stat" :class="{ 'warning-pulse': stats.overdueOrders > 0 }">
+            <div class="g-icon alert"><i class="ri-alarm-warning-line"></i></div>
+            <div class="g-data">
+              <span class="g-label">Просрочено</span>
+              <span class="g-value">{{ stats.overdueOrders }}</span>
+              <span class="g-sub urgent">Срочно!</span>
             </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon" style="background: #dcfce7; color: #166534;"><i class="ri-money-dollar-circle-line"></i></div>
-            <div class="stat-main">
-              <div class="stat-label">Касса</div>
-              <div class="stat-value">{{ formatMoney(stats.cash) }}</div>
-              <div class="stat-sub positive">Продаж: {{ formatMoney(stats.sales) }}</div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon" style="background: #ede9fe; color: #5b21b6;"><i class="ri-hotel-line"></i></div>
-            <div class="stat-main">
-              <div class="stat-label">Склад</div>
-              <div class="stat-value">{{ stats.totalProducts }}</div>
-              <div class="stat-sub" :class="{ warning: stats.lowStock > 0 }">
-                {{ stats.lowStock }} тов. заканчивается
-              </div>
+          <div class="glass-stat highlight">
+            <div class="g-icon cash"><i class="ri-wallet-3-line"></i></div>
+            <div class="g-data">
+              <span class="g-label">Остаток в кассе</span>
+              <span class="g-value">{{ formatMoney(stats.cash) }}</span>
+              <span class="g-sub sales">Продаж: {{ formatMoney(stats.sales) }}</span>
             </div>
           </div>
         </div>
 
-        <!-- CHARTS SECTION -->
-        <div class="charts-section">
-          <div class="chart-card main-chart">
-            <div class="chart-header">
-              <h3>Динамика продаж (30 дней)</h3>
-              <div class="chart-legend">Общий доход за период</div>
+        <!-- Analytics Visuals -->
+        <div class="analytics-layout">
+          <div class="main-chart-card panel">
+            <div class="panel-header">
+                <h3>Динамика выручки</h3>
+                <span class="period-label">Последние 30 дней</span>
             </div>
-            <div class="chart-container">
+            <div class="chart-box">
               <Line v-if="chartData.sales" :data="chartData.sales" :options="chartOptions.line" />
             </div>
           </div>
 
-          <div class="charts-side">
-            <div class="chart-card">
-              <h3>Топ товаров (шт)</h3>
-              <div class="chart-container-sm">
+          <div class="side-charts">
+            <div class="panel half">
+              <h3>Топ товаров</h3>
+              <div class="chart-box-sm">
                 <Doughnut v-if="chartData.products" :data="chartData.products" :options="chartOptions.doughnut" />
               </div>
             </div>
-            <div class="chart-card">
-              <h3>Производительность (логи)</h3>
-              <div class="chart-container-sm">
+            <div class="panel half">
+              <h3>Производительность</h3>
+              <div class="chart-box-sm">
                 <Bar v-if="chartData.workers" :data="chartData.workers" :options="chartOptions.bar" />
               </div>
             </div>
           </div>
         </div>
 
-        <div class="dashboard-tables">
-          <div class="table-card">
-            <div class="card-title">Последние заказы</div>
-            <div class="simple-list">
-              <div v-for="order in recentOrders" :key="order.id" class="list-item">
-                <div class="item-info">
-                  <span class="id">#{{ order.id }}</span>
-                  <span class="name">{{ getProductName(order.product_id) }}</span>
+        <!-- Recent Activity -->
+        <div class="activity-section">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3>Последние заказы</h3>
+                    <button class="link-btn" @click="$router.push('/manager/orders')">Все заказы <i class="ri-arrow-right-s-line"></i></button>
                 </div>
-                <StatusBadge :status="order.status" />
-              </div>
+                <div class="orders-list-simple">
+                  <div v-for="order in recentOrders" :key="order.id" class="simple-order-row" @click="$router.push(`/manager/orders/${order.id}`)">
+                    <div class="order-id-track">
+                        <span class="id">#{{ order.id }}</span>
+                        <span class="p-name">{{ getProductName(order.product_id) }}</span>
+                    </div>
+                    <StatusBadge :status="order.status" />
+                  </div>
+                </div>
             </div>
-          </div>
         </div>
       </div>
 
-      <!-- MANAGER DASHBOARD -->
-      <div v-else-if="userStore.isManager" class="manager-section">
-         <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon" style="background: #e0f2fe; color: #0369a1;"><i class="ri-file-list-3-line"></i></div>
-            <div class="stat-main">
-              <div class="stat-label">Активные заказы</div>
-              <div class="stat-value">{{ stats.activeOrders }}</div>
+      <!-- MANAGER VIEW -->
+      <div v-else-if="userStore.isManager" class="view-section">
+         <div class="stats-ribbon">
+          <div class="glass-stat">
+            <div class="g-icon orders"><i class="ri-file-list-3-line"></i></div>
+            <div class="g-data">
+              <span class="g-label">Активные заказы</span>
+              <span class="g-value">{{ stats.activeOrders }}</span>
             </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon" style="background: #fee2e2; color: #991b1b;"><i class="ri-error-warning-line"></i></div>
-            <div class="stat-main">
-              <div class="stat-label">Просрочено</div>
-              <div class="stat-value">{{ stats.overdueOrders }}</div>
+          <div class="glass-stat warning-pulse">
+            <div class="g-icon alert"><i class="ri-error-warning-line"></i></div>
+            <div class="g-data">
+              <span class="g-label">Просрочено</span>
+              <span class="g-value">{{ stats.overdueOrders }}</span>
             </div>
           </div>
         </div>
         
-        <div class="card" style="margin-top: 2rem;">
-          <div class="card-header"><h3>Срочные заказы</h3></div>
-          <div class="card-body">
-            <div v-for="order in urgentOrders" :key="order.id" class="list-item border">
-              <div class="info">
-                <strong>#{{ order.id }}</strong> - {{ getProductName(order.product_id) }}
-                <div class="date">Дедлайн: {{ formatDate(order.deadline) }}</div>
+        <div class="panel mt-gap">
+          <div class="panel-header"><h3>Срочные задачи</h3></div>
+          <div class="urgent-orders-list">
+            <div v-for="order in urgentOrders" :key="order.id" class="urgent-item">
+              <div class="u-info">
+                <span class="u-title">#{{ order.id }} • {{ getProductName(order.product_id) }}</span>
+                <span class="u-date" :class="{ 'danger': isOverdue(order) }">Дедлайн: {{ formatDate(order.deadline) }}</span>
               </div>
               <StatusBadge :status="order.status" />
             </div>
@@ -151,86 +156,95 @@
         </div>
       </div>
 
-      <!-- WORKER DASHBOARD -->
-      <div v-else-if="userStore.isWorker" class="worker-section">
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon" style="background: #dcfce7; color: #166534;"><i class="ri-medal-line"></i></div>
-            <div class="stat-main">
-              <div class="stat-label">Начислено всего</div>
-              <div class="stat-value">{{ formatMoney(salary.total_earned) }}</div>
-              <div class="stat-sub warning">Не выплачено: {{ formatMoney(salary.total_unpaid) }}</div>
+      <!-- WORKER VIEW -->
+      <div v-else-if="userStore.isWorker" class="view-section">
+        <div class="worker-welcome">
+            <div class="w-card income">
+                <div class="w-icon"><i class="ri-medal-fill"></i></div>
+                <div class="w-data">
+                    <span class="w-lbl">Вы заработали</span>
+                    <span class="w-val">{{ formatMoney(salary.total_earned) }}</span>
+                    <span class="w-sub" v-if="salary.total_unpaid > 0">К выплате: {{ formatMoney(salary.total_unpaid) }}</span>
+                </div>
             </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon" style="background: #e0f2fe; color: #0369a1;"><i class="ri-tools-line"></i></div>
-            <div class="stat-main">
-              <div class="stat-label">План на сегодня</div>
-              <div class="stat-value">{{ todayOrders.length }}</div>
+            <div class="w-card work">
+                <div class="w-icon"><i class="ri-flashlight-fill"></i></div>
+                <div class="w-data">
+                    <span class="w-lbl">Задач на сегодня</span>
+                    <span class="w-val">{{ todayOrders.length }}</span>
+                </div>
             </div>
-          </div>
         </div>
 
-        <div class="worker-actions">
-           <AppButton @click="$router.push('/employee/tasks')"><i class="ri-factory-line btn-icon"></i> Перейти к задачам</AppButton>
-           <AppButton variant="outline" @click="$router.push('/employee/salary')"><i class="ri-wallet-3-line btn-icon"></i> Моя зарплата</AppButton>
+        <div class="worker-nav">
+           <button class="nav-tile" @click="$router.push('/employee/tasks')">
+               <i class="ri-factory-line"></i>
+               <span>Задачи в цеху</span>
+           </button>
+           <button class="nav-tile secondary" @click="$router.push('/employee/salary')">
+               <i class="ri-money-tenge-box-line"></i>
+               <span>Моя выработка</span>
+           </button>
         </div>
       </div>
 
-      <!-- WHOLESALER CRM DASHBOARD -->
-      <div v-else-if="userStore.isWholesaler" class="wholesaler-section">
-        <div class="welcome-box">
-          <div class="box-content">
-            <h2>Добро пожаловать в кабинет партнёра!</h2>
-            <p>Здесь вы можете отслеживать статус ваших заказов и заказывать новые партии товара по оптовым ценам.</p>
-            <AppButton @click="$router.push('/wholesaler/catalog')" size="lg">Перейти к каталогу <i class="ri-arrow-right-line"></i></AppButton>
+      <!-- WHOLESALER VIEW -->
+      <div v-else-if="userStore.isWholesaler" class="view-section">
+        <div class="partner-hero">
+          <div class="hero-content">
+            <h2>Добро пожаловать, партнёр!</h2>
+            <p>Управляйте своими оптовыми заказами и следите за статусом поставок в реальном времени.</p>
+            <AppButton variant="primary" size="lg" @click="$router.push('/wholesaler/catalog')">
+                Перейти в каталог <i class="ri-arrow-right-line"></i>
+            </AppButton>
           </div>
-          <div class="box-stats">
-            <div class="mini-stat">
-              <div class="num">{{ stats.myOrders }}</div>
-              <div class="lab">Всего заказов</div>
-            </div>
-            <div class="mini-stat">
-              <div class="num">{{ stats.pendingOrders }}</div>
-              <div class="lab">В обработке</div>
-            </div>
+          <div class="partner-stats">
+              <div class="p-stat">
+                  <span class="val">{{ stats.myOrders }}</span>
+                  <span class="lbl">Заказов всего</span>
+              </div>
+              <div class="p-stat">
+                  <span class="val">{{ stats.pendingOrders }}</span>
+                  <span class="lbl">В обработке</span>
+              </div>
           </div>
         </div>
 
-        <div class="wholesaler-grid">
-           <div class="card">
-             <div class="card-header"><h3>Мои последние заказы</h3></div>
-             <div class="card-body">
-                <div v-if="myOrders.length === 0" class="empty">У вас пока нет заказов</div>
+        <div class="panel mt-gap">
+            <div class="panel-header">
+                <h3>Активные заказы</h3>
+                <button class="link-btn" @click="$router.push('/wholesaler/my-orders')">История →</button>
+            </div>
+            <div class="order-strips-container">
+                <div v-if="myOrders.length === 0" class="empty-notif">У вас пока нет активных заказов</div>
                 <div v-for="order in myOrders" :key="order.id" class="order-strip">
-                   <div class="strip-id">#{{ order.id }}</div>
-                   <div class="strip-product">{{ getProductName(order.product_id) }}</div>
-                   <div class="strip-qty">{{ order.quantity }} шт.</div>
+                   <div class="s-id">#{{ order.id }}</div>
+                   <div class="s-product">{{ getProductName(order.product_id) }}</div>
+                   <div class="s-qty">{{ order.quantity }} шт.</div>
                    <StatusBadge :status="order.status" />
                 </div>
-                <div class="strip-footer">
-                   <router-link to="/wholesaler/my-orders" class="link">Все заказы →</router-link>
-                </div>
-             </div>
-           </div>
+            </div>
         </div>
       </div>
     </div>
 
     <!-- Task Modal -->
-    <AppModal v-model="showTaskModal" title="Новое поручение">
-       <div class="form-group">
-          <label>Заголовок</label>
-          <input v-model="taskForm.title" class="input" placeholder="Напр: Срочная упаковка">
-       </div>
-       <div class="form-group">
-          <label>Сотрудник</label>
-          <select v-model="taskForm.worker_id" class="select">
-             <option v-for="w in workers" :key="w.id" :value="w.id">{{ w.full_name }}</option>
-          </select>
+    <AppModal v-model="showTaskModal" title="Создать поручение">
+       <div class="modern-form">
+          <div class="f-group">
+             <label>Опишите задачу</label>
+             <input v-model="taskForm.title" class="modern-input" placeholder="Напр: Срочная упаковка товара">
+          </div>
+          <div class="f-group">
+             <label>Исполнитель</label>
+             <select v-model="taskForm.worker_id" class="modern-select">
+                <option value="" disabled>Выберите сотрудника</option>
+                <option v-for="w in workers" :key="w.id" :value="w.id">{{ w.full_name }}</option>
+             </select>
+          </div>
        </div>
        <template #footer>
-          <AppButton @click="handleCreateTask" :loading="submittingTask">Назначить</AppButton>
+          <AppButton @click="handleCreateTask" :loading="submittingTask" variant="primary" class="full-btn">Назначить задачу</AppButton>
        </template>
     </AppModal>
   </div>
@@ -238,6 +252,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useOrdersStore } from '@/stores/orders'
 import { useWarehouseStore } from '@/stores/warehouse'
@@ -249,18 +264,12 @@ import StatusBadge from '@/components/UI/StatusBadge.vue'
 // Charts
 import { Line, Doughnut, Bar } from 'vue-chartjs'
 import { 
-  Chart as ChartJS, 
-  Title, Tooltip, Legend, 
-  LineElement, LinearScale, PointElement, CategoryScale,
-  ArcElement, BarElement
+  Chart as ChartJS, Title, Tooltip, Legend, LineElement, LinearScale, PointElement, CategoryScale, ArcElement, BarElement, Filler 
 } from 'chart.js'
 
-ChartJS.register(
-  Title, Tooltip, Legend, 
-  LineElement, LinearScale, PointElement, CategoryScale,
-  ArcElement, BarElement
-)
+ChartJS.register(Title, Tooltip, Legend, LineElement, LinearScale, PointElement, CategoryScale, ArcElement, BarElement, Filler)
 
+const router = useRouter()
 const userStore = useUserStore()
 const ordersStore = useOrdersStore()
 const warehouseStore = useWarehouseStore()
@@ -282,17 +291,25 @@ const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: { legend: { display: false } },
-    scales: { y: { beginAtZero: true } }
+    scales: { 
+        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { weight: '600' } } },
+        x: { grid: { display: false } }
+    }
   },
   doughnut: {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { position: 'bottom' } }
+    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { weight: '600' } } } },
+    cutout: '70%'
   },
   bar: {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { display: false } }
+    plugins: { legend: { display: false } },
+    scales: { 
+        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+        x: { grid: { display: false } }
+    }
   }
 }
 
@@ -305,13 +322,15 @@ const greeting = computed(() => {
 })
 
 const roleDescription = computed(() => {
-  const map = { admin: 'Управление производством и бизнесом', manager: 'Контроль заказов и клиентов', worker: 'Задачи и выработка', wholesaler: 'Личный кабинет партнёра' }
+  const map = { admin: 'Панель управления бизнесом', manager: 'Операционный контроль', worker: 'Мой рабочий цех', wholesaler: 'Кабинет оптовика' }
   return map[userStore.user?.role] || ''
 })
 
-const currentDate = computed(() => new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }))
+const currentDate = computed(() => {
+    return new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', weekday: 'long' })
+})
 
-const formatMoney = (v) => new Intl.NumberFormat('ru-RU').format(v || 0) + ' ₸'
+const formatMoney = (v) => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(v || 0) + ' ₸'
 const formatDate = (d) => new Date(d).toLocaleDateString('ru-RU')
 const getProductName = (id) => warehouseStore.getProductById(id)?.name || '...'
 
@@ -329,8 +348,13 @@ const stats = computed(() => ({
   myOrders: ordersStore.orders.filter(o => o.wholesaler_id === userStore.user?.id).length
 }))
 
-const recentOrders = computed(() => ordersStore.orders.slice(0, 8))
-const urgentOrders = computed(() => ordersStore.orders.filter(o => o.status !== 'delivered').slice(0, 5))
+const isOverdue = (order) => {
+  if (order.status === 'delivered') return false
+  return new Date(order.deadline) < new Date()
+}
+
+const recentOrders = computed(() => ordersStore.orders.filter(o => o.status !== 'delivered').sort((a,b) => b.id - a.id).slice(0, 8))
+const urgentOrders = computed(() => ordersStore.orders.filter(o => o.status !== 'delivered').sort((a,b) => new Date(a.deadline) - new Date(b.deadline)).slice(0, 5))
 const todayOrders = computed(() => ordersStore.todayOrders)
 const myOrders = computed(() => ordersStore.orders.filter(o => o.wholesaler_id === userStore.user?.id).slice(0, 10))
 
@@ -365,15 +389,23 @@ const loadData = async () => {
 
 const initCharts = (data) => {
   chartData.value.sales = {
-    labels: data.daily_sales.map(s => s.date),
+    labels: data.daily_sales.map(s => s.date.split('-').slice(1).reverse().join('.')),
     datasets: [{
       label: 'Продажи',
       data: data.daily_sales.map(s => s.amount),
       borderColor: '#3b82f6',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      backgroundColor: (context) => {
+          const bg = context.chart.ctx.createLinearGradient(0, 0, 0, 400);
+          bg.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
+          bg.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+          return bg;
+      },
       fill: true,
-      tension: 0.4,
-      pointRadius: 2
+      tension: 0.45,
+      pointRadius: 4,
+      pointBackgroundColor: '#fff',
+      pointBorderWidth: 2,
+      borderWidth: 4
     }]
   }
 
@@ -381,15 +413,19 @@ const initCharts = (data) => {
     labels: data.top_products.map(p => p.name),
     datasets: [{
       data: data.top_products.map(p => p.value),
-      backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+      backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'],
+      hoverOffset: 10,
+      borderWidth: 0
     }]
   }
 
   chartData.value.workers = {
-    labels: data.worker_performance.map(w => w.name),
+    labels: data.worker_performance.map(w => w.name.split(' ')[0]),
     datasets: [{
       data: data.worker_performance.map(w => w.value),
-      backgroundColor: '#6366f1'
+      backgroundColor: '#6366f1',
+      borderRadius: 8,
+      barThickness: 30
     }]
   }
 }
@@ -403,13 +439,15 @@ const openTaskModal = async () => {
 }
 
 const handleCreateTask = async () => {
+  if (!taskForm.value.title || !taskForm.value.worker_id) return
   submittingTask.value = true
   try {
     await tasksAPI.create(taskForm.value)
     showTaskModal.value = false
-    alert('Готово!')
+    taskForm.value = { title: '', worker_id: '' }
+    alert('Поручение создано!')
   } catch (e) {
-    alert('Ошибка')
+    alert('Ошибка при создании')
   } finally {
     submittingTask.value = false
   }
@@ -419,80 +457,149 @@ onMounted(loadData)
 </script>
 
 <style scoped>
-.dashboard { padding: 2rem; max-width: 1400px; margin: 0 auto; background: #f8fafc; min-height: 100vh; }
-.dashboard-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; }
-.dashboard-header h1 { font-size: 2.25rem; font-weight: 800; color: #1e293b; margin: 0; letter-spacing: -0.025em; }
-.subtitle { color: #64748b; font-size: 1.1rem; margin-top: 0.25rem; }
-.date-chip { background: white; padding: 0.5rem 1rem; border-radius: 99px; font-weight: 600; color: #475569; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.dashboard { padding: 1.5rem; max-width: 1400px; margin: 0 auto; overflow-x: hidden; }
+.dashboard-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem; gap: 1rem; }
+.dashboard-header h1 { font-size: 2.5rem; font-weight: 900; color: #1e293b; margin: 0; letter-spacing: -0.02em; line-height: 1.2; }
+.subtitle { color: #64748b; font-size: 1.1rem; font-weight: 500; margin-top: 0.25rem; }
+.time-pill { background: white; padding: 0.6rem 1.25rem; border-radius: 14px; display: flex; align-items: center; gap: 0.75rem; color: #475569; font-weight: 700; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.03); border: 1px solid #f1f5f9; }
+.time-pill i { color: #3b82f6; font-size: 1.2rem; }
 
-.quick-actions-bar { display: flex; gap: 1rem; margin-bottom: 2rem; }
-.btn-icon { margin-right: 0.5rem; font-size: 1.1rem; }
+.action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+.control-btn { display: flex; align-items: center; gap: 1.25rem; padding: 1.25rem; border-radius: 20px; border: none; cursor: pointer; transition: all 0.2s; text-align: left; }
+.control-btn.primary { background: #3b82f6; color: white; box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.25); }
+.control-btn.primary:hover { transform: translateY(-2px); box-shadow: 0 15px 20px -5px rgba(59, 130, 246, 0.3); }
+.control-btn.outline { background: white; border: 2px solid #f1f5f9; color: #1e293b; }
+.control-btn.outline:hover { border-color: #3b82f6; background: #eff6ff; }
 
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-.stat-card { background: white; padding: 1.5rem; border-radius: 16px; display: flex; gap: 1.25rem; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; }
-.stat-icon { width: 3.5rem; height: 3.5rem; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; }
-.stat-label { color: #64748b; font-size: 0.875rem; font-weight: 600; }
-.stat-value { font-size: 1.875rem; font-weight: 800; color: #1e293b; margin: 0.1rem 0; }
-.stat-sub { font-size: 0.8rem; color: #94a3b8; font-weight: 500; }
-.stat-sub.positive { color: #10b981; }
-.stat-sub.warning { color: #f59e0b; }
+.btn-icon { width: 50px; height: 50px; border-radius: 14px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+.control-btn.outline .btn-icon { background: #f1f5f9; color: #3b82f6; }
+.btn-text { display: flex; flex-direction: column; }
+.t-main { font-weight: 800; font-size: 1.1rem; }
+.t-sub { font-size: 0.85rem; opacity: 0.8; font-weight: 500; }
 
-.charts-section { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2.5rem; }
-.chart-card { background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-.chart-card h3 { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0 0 1.25rem; }
-.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-.chart-legend { font-size: 0.85rem; color: #64748b; }
-.chart-container { height: 320px; position: relative; }
-.chart-container-sm { height: 230px; position: relative; }
-.charts-side { display: flex; flex-direction: column; gap: 1.5rem; }
+/* Stats Ribbon */
+.stats-ribbon { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem; }
+.glass-stat { background: white; padding: 1.5rem; border-radius: 24px; display: flex; align-items: center; gap: 1.25rem; border: 1px solid #f1f5f9; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.02); }
+.g-icon { width: 60px; height: 60px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0; }
+.g-icon.orders { background: #e0f2fe; color: #0369a1; }
+.g-icon.work { background: #fef3c7; color: #92400e; }
+.g-icon.alert { background: #fee2e2; color: #b91c1c; }
+.g-icon.cash { background: #dcfce7; color: #15803d; }
 
-.dashboard-tables { display: grid; grid-template-columns: 1fr; }
-.table-card { background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid #f1f5f9; }
-.card-title { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 1rem; }
-.simple-list { display: flex; flex-direction: column; }
-.list-item { display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 0; border-bottom: 1px solid #f1f5f9; }
-.list-item:last-child { border-bottom: none; }
-.item-info .id { font-weight: 700; color: #3b82f6; margin-right: 0.75rem; }
-.item-info .name { font-weight: 500; color: #334155; }
+.g-data { display: flex; flex-direction: column; }
+.g-label { font-size: 0.8rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+.g-value { font-size: 1.8rem; font-weight: 900; color: #1e293b; line-height: 1; margin: 4px 0; }
+.g-sub { font-size: 0.85rem; color: #64748b; font-weight: 600; }
+.g-sub.urgent { color: #ef4444; }
+.glass-stat.highlight { background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-color: #3b82f6; border-width: 1.5px; }
 
-/* Wholesaler Specific */
-.welcome-box { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; padding: 2.5rem; border-radius: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-.box-content { max-width: 60%; }
-.box-content h2 { font-size: 1.875rem; margin: 0 0 1rem; font-weight: 800; }
-.box-content p { font-size: 1.1rem; opacity: 0.9; margin-bottom: 1.5rem; color: #cbd5e1; }
-.box-stats { display: flex; gap: 2rem; }
-.mini-stat { text-align: center; background: rgba(255,255,255,0.1); padding: 1.5rem 2rem; border-radius: 16px; backdrop-filter: blur(4px); }
-.mini-stat .num { font-size: 2rem; font-weight: 800; color: white; }
-.mini-stat .lab { font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
-.order-strip { display: flex; align-items: center; padding: 1rem; background: white; border-radius: 12px; margin-bottom: 0.75rem; border: 1px solid #f1f5f9; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-.strip-id { font-weight: 800; color: #3b82f6; width: 60px; }
-.strip-product { flex: 1; font-weight: 600; color: #1e293b; }
-.strip-qty { margin-right: 2rem; color: #64748b; font-weight: 500; }
-.strip-footer { text-align: right; margin-top: 1rem; }
+.warning-pulse { animation: shadowPulse 2s infinite; border-color: #fecaca; }
+@keyframes shadowPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.1); } 50% { box-shadow: 0 0 20px 5px rgba(239, 68, 68, 0.15); } }
 
-.worker-actions { display: flex; gap: 1rem; margin: 2rem 0; }
+/* Analytics Panel */
+.analytics-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2.5rem; min-width: 0; }
+.panel { background: white; border-radius: 26px; border: 1px solid #f1f5f9; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.02); padding: 2rem; min-width: 0; }
+.panel-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; gap: 0.5rem; }
+.panel-header h3 { font-size: 1.25rem; font-weight: 800; color: #1e293b; margin: 0; }
+.period-label { font-size: 0.85rem; font-weight: 700; color: #3b82f6; background: #eff6ff; padding: 4px 12px; border-radius: 8px; }
 
-.loading { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 50vh; }
-.spinner { width: 3rem; height: 3rem; border: 4px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem; }
+.chart-box { height: 350px; position: relative; }
+.chart-box-sm { height: 260px; position: relative; }
+.side-charts { display: flex; flex-direction: column; gap: 1.5rem; }
+.panel.half { padding: 1.5rem; flex: 1; }
+
+/* Orders List */
+.orders-list-simple { display: flex; flex-direction: column; gap: 0.75rem; }
+.simple-order-row { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; background: #f8fafc; border-radius: 16px; border: 1.5px solid transparent; cursor: pointer; transition: all 0.2s; }
+.simple-order-row:hover { background: white; border-color: #3b82f6; transform: translateX(8px); }
+.order-id-track { display: flex; align-items: center; gap: 1rem; }
+.order-id-track .id { font-weight: 900; color: #3b82f6; font-size: 1rem; }
+.order-id-track .p-name { font-weight: 700; color: #1e293b; font-size: 1rem; }
+
+/* Worker Cards */
+.worker-welcome { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+.w-card { padding: 2.5rem; border-radius: 28px; display: flex; align-items: center; gap: 2rem; color: white; }
+.w-card.income { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); }
+.w-card.work { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+.w-icon { font-size: 3.5rem; opacity: 0.3; }
+.w-data { display: flex; flex-direction: column; }
+.w-lbl { font-size: 0.9rem; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.1em; }
+.w-val { font-size: 2.8rem; font-weight: 900; line-height: 1; margin: 10px 0; }
+.w-sub { font-size: 1.1rem; font-weight: 600; opacity: 0.9; }
+
+.worker-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.nav-tile { padding: 2.5rem; border-radius: 24px; border: none; background: white; display: flex; flex-direction: column; align-items: center; gap: 1rem; cursor: pointer; border: 2px solid #f1f5f9; transition: all 0.2s; }
+.nav-tile i { font-size: 3rem; color: #3b82f6; }
+.nav-tile span { font-size: 1.25rem; font-weight: 800; color: #1e293b; }
+.nav-tile:hover { border-color: #3b82f6; transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05); }
+
+/* Partner Hero */
+.partner-hero { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 28px; padding: 3.5rem; color: white; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
+.hero-content { max-width: 60%; }
+.hero-content h2 { font-size: 2.5rem; font-weight: 900; margin: 0 0 1rem; }
+.hero-content p { font-size: 1.25rem; opacity: 0.8; margin-bottom: 2rem; line-height: 1.6; }
+.partner-stats { display: flex; gap: 2rem; }
+.p-stat { background: rgba(255,255,255,0.08); padding: 1.5rem 2.5rem; border-radius: 20px; backdrop-filter: blur(10px); text-align: center; }
+.p-stat .val { font-size: 2.5rem; font-weight: 900; display: block; }
+.p-stat .lbl { font-size: 0.8rem; opacity: 0.7; font-weight: 800; text-transform: uppercase; }
+
+.order-strip { display: flex; align-items: center; padding: 1.25rem; background: #f8fafc; border-radius: 18px; border: 1px solid #f1f5f9; margin-bottom: 0.75rem; }
+.s-id { font-weight: 900; color: #3b82f6; width: 70px; }
+.s-product { flex: 1; font-weight: 800; color: #1e293b; font-size: 1.1rem; }
+.s-qty { margin-right: 2rem; font-weight: 600; color: #64748b; }
+
+.link-btn { background: none; border: none; font-weight: 800; color: #3b82f6; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+
+/* Form Elements */
+.modern-form { display: flex; flex-direction: column; gap: 1.5rem; padding: 0.5rem 0; }
+.f-group label { display: block; font-weight: 800; color: #1e293b; margin-bottom: 0.75rem; font-size: 0.9rem; text-transform: uppercase; }
+.modern-input, .modern-select { width: 100%; padding: 1rem; border: 2px solid #f1f5f9; background: #f8fafc; border-radius: 14px; font-size: 1rem; font-weight: 600; outline: none; transition: all 0.2s; }
+.modern-input:focus, .modern-select:focus { border-color: #3b82f6; background: white; }
+.full-btn { padding: 1rem; font-weight: 800; width: 100%; border-radius: 14px; }
+
+.loading-state { height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.spinner { width: 4rem; height: 4rem; border: 5px solid #f1f5f9; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1.5rem; }
+
 @keyframes spin { to { transform: rotate(360deg); } }
+.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 @media (max-width: 1200px) {
-  .charts-section { grid-template-columns: 1fr; }
+    .analytics-layout { grid-template-columns: 1fr; }
+    .side-charts { flex-direction: row; }
 }
+
 @media (max-width: 768px) {
-  .dashboard-header { flex-direction: column; }
-  .welcome-box { flex-direction: column; align-items: flex-start; gap: 2rem; }
-  .box-content { max-width: 100%; }
+    .dashboard { padding: 0.75rem; }
+    .dashboard-header { flex-direction: column; gap: 1rem; }
+    .dashboard-header h1 { font-size: 1.8rem; }
+    .stats-ribbon { grid-template-columns: 1fr; gap: 1rem; }
+    .glass-stat { padding: 1.25rem; }
+    .worker-welcome, .worker-nav { grid-template-columns: 1fr; gap: 1rem; }
+    .w-card { padding: 1.5rem; gap: 1rem; }
+    .w-val { font-size: 2.2rem; }
+    .side-charts { flex-direction: column; }
+    .partner-hero { flex-direction: column; padding: 2rem 1.5rem; gap: 2rem; text-align: center; }
+    .partner-hero .hero-content { max-width: 100%; }
+    .hero-content h2 { font-size: 1.8rem; }
+    .p-stat { padding: 1rem; }
+    .panel { padding: 1.25rem; }
+    .action-grid { gap: 1rem; }
+    .chart-box { height: 280px; }
 }
-.stat-sub.urgent { color: #dc2626; font-weight: 700; }
 
-.stat-card.alert-card {
-  border: 2px solid #fee2e2;
-  animation: pulse 2s ease-in-out infinite;
+@media (max-width: 480px) {
+    .dashboard { padding: 0.5rem; }
+    .panel { padding: 1rem; border-radius: 18px; }
+    .chart-box { height: 220px; }
+    .chart-box-sm { height: 200px; }
+    .g-value { font-size: 1.5rem; }
 }
 
-@keyframes pulse {
-  0%, 100% { border-color: #fee2e2; }
-  50% { border-color: #dc2626; }
-}
+.mt-gap { margin-top: 2.5rem; }
+.u-info { display: flex; flex-direction: column; }
+.u-title { font-weight: 800; color: #1e293b; }
+.u-date { font-size: 0.85rem; color: #64748b; font-weight: 600; }
+.u-date.danger { color: #ef4444; }
+.urgent-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8fafc; border-radius: 14px; margin-bottom: 0.75rem; }
 </style>
