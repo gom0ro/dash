@@ -5,7 +5,7 @@ from datetime import datetime
 
 from app.core.dependencies import get_admin_user
 from app.core.security import get_current_active_user
-from app.db.session import get_db
+from app.core.database import get_db
 from app.models.user import User
 from app.models.salary_payment import SalaryPayment, PaymentType
 from app.schemas.salary_payment import SalaryPaymentCreate, SalaryPaymentResponse

@@ -171,7 +171,7 @@
       </div>
       <template #footer>
         <AppButton variant="secondary" @click="showExpenseModal = false">Отмена</AppButton>
-        <AppButton variant="primary" :loading="saving" @click="handleSaveExpense">
+        <AppButton variant="primary" :loading="saving" @click="handleSaveExpense" :disabled="!isFormValid">
           {{ editingExpense ? 'Сохранить изменения' : 'Добавить расход' }}
         </AppButton>
       </template>
@@ -215,6 +215,10 @@ const expenseForm = ref({
   amount: 0,
   expense_type: '',
   product_id: null
+})
+
+const isFormValid = computed(() => {
+  return expenseForm.value.name && expenseForm.value.amount > 0 && expenseForm.value.expense_type
 })
 
 const filterTypes = [

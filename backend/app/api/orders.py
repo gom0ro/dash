@@ -5,7 +5,7 @@ from datetime import datetime
 
 from app.core.dependencies import get_admin_or_manager_user
 from app.core.security import get_current_active_user
-from app.db.session import get_db
+from app.core.database import get_db
 from app.models.user import User, UserRole
 from app.models.order import Order, OrderStatus
 from app.models.product import Product

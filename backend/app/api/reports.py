@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 from app.core.dependencies import get_admin_user
-from app.db.session import get_db
+from app.core.database import get_db
 from app.models.user import User
 from app.models.order import Order, OrderStatus
 from app.models.product import Product
